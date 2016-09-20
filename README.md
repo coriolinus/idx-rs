@@ -40,3 +40,20 @@ The sizes in each dimension are 4-byte integers (MSB first, high endian, like in
 The data is stored like in a C array, i.e. the index in the last dimension changes the fastest.
 
 Happy hacking.
+
+## Example of IDX Format:
+
+### TEST SET IMAGE FILE (t10k-images-idx3-ubyte):
+
+```
+
+[offset] [type]          [value]          [description]
+0000     32 bit integer  0x00000803(2051) magic number
+0004     32 bit integer  10000            number of images
+0008     32 bit integer  28               number of rows
+0012     32 bit integer  28               number of columns
+0016     unsigned byte   ??               pixel
+0017     unsigned byte   ??               pixel
+........
+xxxx     unsigned byte   ??               pixel
+```
