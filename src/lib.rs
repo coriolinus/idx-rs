@@ -48,20 +48,6 @@ pub enum IdxErr {
     UnknownDataType,
 }
 
-// We need a parameterizied way to actually get values out of this stream of u8s, so
-// let's set up a trait here.
-trait ValueExtractor<R: Read, T> {
-    fn extract(&mut self) -> io::Result<T>;
-}
-
-// single implementation--TODO: replace with a macro for all appropriate types
-impl<R: Read> ValueExtractor<R, u8> for R {
-    fn extract(&mut self) -> io::Result<u8> {
-        let mut data_buf = [0; 1];
-        try!(self.read_exact(&mut data_buf));
-        Ok(casts::as_u8(data_buf))
-    }
-}
 
 
 pub struct IdxReader<R: Read, T> {
