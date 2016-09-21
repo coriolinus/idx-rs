@@ -1,5 +1,6 @@
 use std::io;
 use std::io::Read;
+use std::marker::PhantomData;
 
 mod casts;
 
@@ -47,18 +48,34 @@ pub enum IdxErr {
     UnknownDataType,
 }
 
+// We need a parameterizied way to actually get values out of this stream of u8s, so
+// let's set up a trait here.
+trait ValueExtractor<R: Read, T> {
+    fn extract(&mut self) -> io::Result<T>;
+}
 
-pub struct IdxReader<R: Read> {
+// single implementation--TODO: replace with a macro for all appropriate types
+impl<R: Read> ValueExtractor<R, u8> for R {
+    fn extract(&mut self) -> io::Result<u8> {
+        let mut data_buf = [0; 1];
+        try!(self.read_exact(&mut data_buf));
+        Ok(casts::as_u8(data_buf))
+    }
+}
+
+
+pub struct IdxReader<R: Read, T> {
     source: R,
     data_type: DataType,
+    type_phantom: PhantomData<T>,
     dimensions: Vec<u32>,
 }
 
-impl<R: Read> IdxReader<R> {
+impl<R: Read, T> IdxReader<R, T> {
     /// Creates a new IdxReader from the given reader, immediately parsing the header.
     ///
     /// If an error is encountered while parsing the Idx header, an error is returned.
-    pub fn new(mut reader: R) -> Result<IdxReader<R>, IdxErr> {
+    pub fn new(mut reader: R) -> Result<IdxReader<R, T>, IdxErr> {
         let mut byte32: [u8; 4] = [0; 4];
         // get magic number and header data
         try!(reader.read_exact(&mut byte32).map_err(|e| IdxErr::IOError(e)));
@@ -90,13 +107,13 @@ impl<R: Read> IdxReader<R> {
         for _ in 0..n_dimensions {
             // update byte32 with the next 4 bytes from the input
             try!(reader.read_exact(&mut byte32).map_err(|e| IdxErr::IOError(e)));
-
             dimensions.push(casts::as_u32(byte32));
         }
 
         Ok(IdxReader {
             source: reader,
             data_type: dt,
+            type_phantom: PhantomData,
             dimensions: dimensions,
         })
     }
